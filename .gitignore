@@ -67,3 +67,8 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Sensitive configuration files with API keys
+# Keep config.example.js but ignore config.js
+public/config.js
+config.js
