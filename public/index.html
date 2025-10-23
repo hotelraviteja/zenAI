@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Zen Chat-AI</title>
+  <link rel="icon" type="image/x-icon" href="./favicon.ico.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      --primary: #3B82F6;    /* Vibrant blue */
+      --dark: #1F2937;       /* Dark gray */
+      --light: #FFFFFF;      /* White */
+    }
+    
+    body {
+      background-color: var(--dark);
+      color: var(--light);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+    }
+    
+    .primary-bg { background-color: var(--primary); }
+    .dark-bg { background-color: var(--dark); }
+    .light-bg { background-color: var(--light); }
+    
+    .primary-text { color: var(--primary); }
+    .dark-text { color: var(--dark); }
+    .light-text { color: var(--light); }
+    
+    .primary-border { border-color: var(--primary); }
+    .dark-border { border-color: var(--dark); }
+    .light-border { border-color: var(--light); }
+    
+    .typing-dots {
+      display: inline-flex;
+      gap: 3px;
+    }
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      animation: typing-bounce 1.4s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typing-bounce {
+      0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    .message-streaming {
+      border-left: 3px solid var(--primary);
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .online-indicator {
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      border: 2px solid var(--dark);
+    }
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--light);
+      color: var(--dark);
+      border: 1px solid #dadce0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100%;
+    }
+    .google-btn:hover {
+      background: #f8f9fa;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .google-btn img {
+      width: 18px;
+      height: 18px;
+      margin-right: 12px;
+    }
+
+    /* Add this to your existing CSS */
+    #messages {
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+      scrollbar-width: thin;
+      scrollbar-color: #3B82F6 #1F2937;
+    }
+
+    #messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #messages::-webkit-scrollbar-track {
+      background: #1F2937;
+      border-radius: 3px;
+    }
+
+    #messages::-webkit-scrollbar-thumb {
+      background: #3B82F6;
+      border-radius: 3px;
+    }
+
+    #messages::-webkit-scrollbar-thumb:hover {
+      background: #2563EB;
+    }
+    #chatHistory {
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #3B82F6 #1F2937;
+    }
+
+    #chatHistory::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    #chatHistory::-webkit-scrollbar-track {
+      background: #1F2937;
+    }
+
+    #chatHistory::-webkit-scrollbar-thumb {
+      background: #3B82F6;
+      border-radius: 2px;
+    }
+    
+    /* Modern UI Elements */
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .card {
+      background: rgba(31, 41, 55, 0.8);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: var(--light);
+      border-radius: 12px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+      background: #2563EB;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--light);
+      border-radius: 12px;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+    
+    .input-field {
+      background: rgba(31, 41, 55, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: var(--light);
+      transition: all 0.3s;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    
+    .chat-bubble-user {
+      background: var(--primary);
+      color: var(--light);
+      border-radius: 18px 18px 4px 18px;
+      padding: 12px 16px;
+      max-width: 80%;
+      align-self: flex-end;
+    }
+    
+    .chat-bubble-ai {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--light);
+      border-radius: 18px 18px 18px 4px;
+      padding: 12px 16px;
+      max-width: 80%;
+      align-self: flex-start;
+    }
+    
+    .sidebar-item {
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .sidebar-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .sidebar-item.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-left: 3px solid var(--primary);
+    }
+    
+    .prompt-card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 1px solid transparent;
+    }
+    
+    .prompt-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(59, 130, 246, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    .gradient-text {
+      background: linear-gradient(90deg, var(--primary), #60A5FA);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+    
+    /* Scrollbar Styling */
+    .messages-container {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(59, 130, 246, 0.5) rgba(31, 41, 55, 0.3);
+    }
+    
+    .messages-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .messages-container::-webkit-scrollbar-track {
+      background: rgba(31, 41, 55, 0.3);
+      border-radius: 3px;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.5);
+      border-radius: 3px;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.7);
+    }
+    
+    .chat-history-container {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(59, 130, 246, 0.5) rgba(31, 41, 55, 0.3);
+    }
+    
+    .chat-history-container::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .chat-history-container::-webkit-scrollbar-track {
+      background: rgba(31, 41, 55, 0.3);
+      border-radius: 2px;
+    }
+    
+    .chat-history-container::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.5);
+      border-radius: 2px;
+    }
+    
+    .chat-history-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.7);
+    }
+
+    /* Stop Button Styling */
+    .stop-button {
+      background: #EF4444;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .stop-button:hover {
+      background: #DC2626;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    
+    .stop-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .streaming-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    
+    /* ========== RESPONSIVE STYLES ========== */
+    
+    /* Mobile First Approach */
+    @media (max-width: 768px) {
+      #app {
+        flex-direction: column;
+      }
+      
+      #sidebar {
+        width: 100%;
+        height: auto;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 40;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      
+      #sidebar.mobile-open {
+        transform: translateX(0);
+      }
+      
+      #chatMain {
+        width: 100%;
+        height: 100vh;
+      }
+      
+      .mobile-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 30;
+        display: none;
+      }
+      
+      .mobile-overlay.active {
+        display: block;
+      }
+      
+      .mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      
+      .mobile-menu-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 8px;
+      }
+      
+      .chat-bubble-user,
+      .chat-bubble-ai {
+        max-width: 90%;
+      }
+      
+      #messages {
+        padding: 12px;
+        max-height: calc(100vh - 180px);
+      }
+      
+      #userInput {
+        padding-right: 70px;
+      }
+      
+      .input-area {
+        padding: 12px;
+      }
+      
+      .welcome-screen {
+        padding: 20px;
+      }
+      
+      .prompt-grid {
+        grid-template-columns: 1fr !important;
+      }
+      
+      .streaming-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      
+      .stop-button {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .login-card {
+        width: 90% !important;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      
+      .google-btn-container {
+        padding: 0 10px;
+      }
+    }
+    
+    /* Tablet Styles */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      #sidebar {
+        width: 280px;
+      }
+      
+      .chat-bubble-user,
+      .chat-bubble-ai {
+        max-width: 85%;
+      }
+      
+      .prompt-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+    }
+    
+    /* Desktop Styles */
+    @media (min-width: 1025px) {
+      #sidebar {
+        width: 320px;
+      }
+    }
+    
+    /* Small Mobile Devices */
+    @media (max-width: 480px) {
+      .chat-bubble-user,
+      .chat-bubble-ai {
+        max-width: 95%;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      
+      .mobile-header h1 {
+        font-size: 18px;
+      }
+      
+      .login-card {
+        padding: 20px !important;
+      }
+      
+      .google-btn {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+      
+      #userInput {
+        font-size: 16px; /* Prevents zoom on iOS */
+      }
+    }
+    
+    /* Landscape Mode for Mobile */
+    @media (max-height: 500px) and (orientation: landscape) {
+      #messages {
+        max-height: calc(100vh - 140px);
+      }
+      
+      .input-area {
+        padding: 8px 12px;
+      }
+      
+      #userInput {
+        min-height: 40px;
+      }
+    }
+    
+    /* High DPI Screens */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      .chat-bubble-user,
+      .chat-bubble-ai {
+        -webkit-font-smoothing: antialiased;
+      }
+    }
+    
+    /* Dark mode support (for browsers that support it) */
+    @media (prefers-color-scheme: dark) {
+      .google-btn {
+        background: white;
+        color: #1F2937;
+      }
+    }
+  </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+<div id="app" class="w-full h-full flex">
+
+  <!-- Mobile Overlay -->
+  <div id="mobileOverlay" class="mobile-overlay"></div>
+
+  <!-- Login Screen -->
+  <div id="loginScreen" class="fixed inset-0 dark-bg flex items-center justify-center z-50">
+    <div class="card p-8 login-card w-96">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 primary-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-robot text-2xl light-text"></i>
+        </div>
+        <h1 class="text-2xl font-bold light-text">DeepSeek AI</h1>
+        <p class="text-gray-400 mt-2">Sign in to start chatting</p>
+      </div>
+
+      <!-- Google Sign-In Button -->
+      <div class="mb-6 google-btn-container">
+        <div id="g_id_onload" data-auto_prompt="false"></div>
+        <div class="g_id_signin" data-type="standard" data-theme="outline" data-text="sign_in_with" 
+             data-shape="rectangular" data-logo_alignment="left" data-width="100%"></div>
+      </div>
+
+      <!-- Divider -->
+      <div class="relative mb-6">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-700"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-2 dark-bg text-gray-400">Or continue with</span>
+        </div>
+      </div>
+
+      <!-- Manual Login Form -->
+      <form id="loginForm" class="space-y-4 mb-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Your Name</label>
+          <input id="usernameInput" type="text" placeholder="Enter your name"
+            class="w-full p-3 rounded input-field focus:outline-none" required />
+        </div>
+        <button type="submit" class="w-full btn-primary py-3 rounded font-bold">
+          Continue to Chat
+        </button>
+      </form>
+
+      <!-- Guest Option -->
+      <div class="text-center">
+        <button type="button" id="guestLink" class="text-sm text-gray-400 hover:text-white transition-colors">
+          Continue as Guest
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Chat Interface -->
+  <div id="chatMain" class="flex-1 hidden flex h-full">
+    
+    <!-- Sidebar -->
+    <aside id="sidebar" class="dark-bg border-r border-gray-700 flex flex-col">
+      <!-- Mobile Header -->
+      <div class="mobile-header lg:hidden">
+        <h1 class="text-lg font-bold light-text">Chat History</h1>
+        <button id="closeSidebar" class="mobile-menu-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <!-- User Profile Header -->
+      <div class="p-4 border-b border-gray-700 hidden lg:block">
+        <div class="flex items-center space-x-3">
+          <div class="relative">
+            <img id="userAvatar" src="" alt="User" class="w-10 h-10 rounded-full bg-gray-600 object-cover"
+                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iMjAiIGZpbGw9IiMzMzMzMzMiLz4KPHBhdGggZD0iTTIwIDIyQzIzLjMxMzcgMjIgMjYgMTkuMzEzNyAyNiAxNkMyNiAxMi42ODYzIDIzLjMxMzcgMTAgMjAgMTBDMTYuNjg2MyAxMCAxNCAxMi42ODYzIDE0IDE2QzE0IDE5LjMxMzcgMTYuNjg2MyAyMiAyMCAyMloiIGZpbGw9IiM2NjY2NjYiLz4KPHBhdGggZD0iTTIwIDI0QzE0IDI0IDggMjcgOCAzMkgyOEMyOCAyNyAyMiAyNCAyMCAyNFoiIGZpbGw9IiM2NjY2NjYiLz4KPC9zdmc+'">
+            <div class="online-indicator"></div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h2 id="userName" class="font-semibold truncate light-text">User</h2>
+            <p class="text-xs primary-text flex items-center">
+              <span class="w-2 h-2 primary-bg rounded-full mr-1"></span>
+              Online
+            </p>
+            <p id="userEmail" class="text-xs text-gray-400 truncate"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- New Chat Button -->
+      <div class="p-4">
+        <button id="newChatBtn" class="w-full btn-primary py-3 rounded-lg font-semibold flex items-center justify-center space-x-2">
+          <i class="fas fa-plus"></i>
+          <span>New Chat</span>
+        </button>
+      </div>
+
+      <!-- Chat History -->
+      <div class="flex-1 overflow-hidden">
+        <div class="px-4 py-2">
+          <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wide">Recent Chats</h3>
+        </div>
+        <div id="chatHistory" class="chat-history-container space-y-1 px-2 overflow-y-auto max-h-[calc(100vh-200px)]">
+          <!-- Chat history will be populated here -->
+        </div>
+      </div>
+
+      <!-- Settings & Logout -->
+      <div class="p-4 border-t border-gray-700">
+        <div class="space-y-2">
+          <button id="settingsBtn" class="w-full text-left p-2 rounded btn-secondary flex items-center space-x-3">
+            <i class="fas fa-cog text-gray-400 w-5"></i>
+            <span>Settings</span>
+          </button>
+          <button id="logoutBtn" class="w-full text-left p-2 rounded btn-secondary flex items-center space-x-3 text-red-400">
+            <i class="fas fa-sign-out-alt w-5"></i>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col dark-bg">
+      
+      <!-- Chat Header -->
+      <header class="border-b border-gray-700 p-4 glass-effect">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <!-- Mobile Menu Button -->
+            <button id="mobileMenuBtn" class="mobile-menu-btn lg:hidden mr-3">
+              <i class="fas fa-bars"></i>
+            </button>
+            <div>
+              <h1 id="currentChatTitle" class="text-lg font-semibold light-text">New Chat</h1>
+              <div class="flex items-center space-x-4 text-sm text-gray-400">
+                <span id="messageCount">0 messages</span>
+                <span class="hidden sm:inline">•</span>
+                <span id="modelInfo" class="gradient-text font-medium hidden sm:inline">Gemini 2.5 Flash</span>
+                <span class="hidden sm:inline">•</span>
+                <span id="connectionStatus" class="primary-text">
+                  <i class="fas fa-circle text-xs mr-1"></i>
+                  <span class="hidden sm:inline">Connected</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3">
+            <div class="text-sm text-gray-400 hidden md:flex">
+              <span id="apiStatus">Ready</span>
+              <span class="mx-2">•</span>
+              <span id="responseTime">-</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Messages Area -->
+      <div class="flex-1 flex flex-col">
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="flex-1 flex flex-col items-center justify-center p-8 welcome-screen">
+          <div class="text-center max-w-2xl">
+            <div class="w-20 h-20 primary-bg rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <i class="fas fa-robot text-3xl light-text"></i>
+            </div>
+            <h2 id="greetMessage" class="text-3xl font-bold mb-4 light-text">Welcome to DeepSeek AI</h2>
+            <p class="text-gray-400 text-lg mb-8">
+              How can I assist you today? I'm here to help with questions, coding, writing, and much more.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto prompt-grid">
+              <div class="prompt-card" data-prompt="Explain quantum computing in simple terms">
+                <i class="fas fa-lightbulb primary-text mb-2"></i>
+                <div class="font-medium light-text">Explain concepts</div>
+                <div class="text-sm text-gray-400 mt-1">Break down complex topics</div>
+              </div>
+              <div class="prompt-card" data-prompt="Write a Python script to sort a list">
+                <i class="fas fa-code primary-text mb-2"></i>
+                <div class="font-medium light-text">Write code</div>
+                <div class="text-sm text-gray-400 mt-1">Generate programming solutions</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="messages" class="messages-container flex-1 flex flex-col p-6 space-y-6 overflow-y-auto">
+          <!-- Messages will be populated here -->
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="border-t border-gray-700 p-6 glass-effect input-area">
+        <div class="max-w-4xl mx-auto">
+          <div class="relative">
+            <textarea 
+              id="userInput" 
+              rows="1" 
+              placeholder="Message DeepSeek AI..." 
+              class="w-full input-field p-4 pr-32 rounded-xl resize-none focus:outline-none border border-gray-600"
+              maxlength="4000"
+            ></textarea>
+            
+            <div class="absolute right-3 bottom-3 flex items-center space-x-2">
+              <div id="charCount" class="text-xs text-gray-400 hidden sm:block">0/4000</div>
+              <button id="sendBtn" class="btn-primary p-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Streaming Controls -->
+          <div id="streamingControls" class="streaming-controls hidden">
+            <button id="stopBtn" class="stop-button">
+              <i class="fas fa-stop"></i>
+              Stop Generating
+            </button>
+            <div id="typingStatus" class="primary-text">
+              <i class="fas fa-circle text-xs mr-1"></i>
+              AI is typing...
+            </div>
+          </div>
+          
+          <div class="flex justify-between items-center mt-3 text-xs text-gray-400">
+            <div class="flex items-center space-x-4">
+              <button id="clearChat" class="hover:text-gray-300 transition-colors">
+                <i class="fas fa-trash mr-1"></i>Clear Chat
+              </button>
+              <button id="exportChat" class="hover:text-gray-300 transition-colors hidden sm:block">
+                <i class="fas fa-download mr-1"></i>Export
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+// Professional ChatBot Class with Google Sign-In
+class ProfessionalChatBot {
+  constructor() {
+    this.currentUser = null;
+    this.userProfile = {
+      name: '',
+      avatar: '',
+      email: '',
+      loginMethod: 'manual' // manual, google, guest
+    };
+    this.chatHistory = {};
+    this.currentChatId = null;
+    this.isProcessing = false;
+    this.isStreaming = false;
+    this.connectionStatus = 'online';
+    this.currentStreamController = null; // To control the stream
+    this.autoScrollEnabled = true; // Track if auto-scroll should be enabled
+    this.isMobileSidebarOpen = false; // Track mobile sidebar state
+    
+    this.initializeElements();
+    this.setupEventListeners();
+    this.initializeGoogleSignIn();
+    this.init();
+  }
+
+  // ==================== GOOGLE SIGN-IN SETUP ====================
+  initializeGoogleSignIn() {
+    // Configure Google Sign-In
+    window.google.accounts.id.initialize({
+      client_id: '263275183029-tsjqbc9qmc4mdp5u3mp07mpf25p8ifi5.apps.googleusercontent.com',
+      callback: this.handleGoogleSignIn.bind(this),
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+
+    // Render the Google Sign-In button
+    window.google.accounts.id.renderButton(
+      document.querySelector('.g_id_signin'),
+      {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'sign_in_with',
+        shape: 'rectangular',
+        logo_alignment: 'left',
+        width: '100%'
+      }
+    );
+
+    // Optional: Display the One Tap dialog
+    window.google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        // Continue with another method...
+      }
+    });
+  }
+
+  // ==================== GOOGLE SIGN-IN HANDLER ====================
+  async handleGoogleSignIn(response) {
+    try {
+      console.log('Google Sign-In response received');
+      
+      // Show loading state
+      this.showLoadingState('Signing in with Google...');
+
+      // Decode the JWT token
+      const userData = this.parseJwt(response.credential);
+      console.log('Google user data:', userData);
+
+      if (userData && userData.name && userData.picture) {
+        // Update user profile with Google data
+        this.userProfile = {
+          name: userData.name,
+          avatar: userData.picture,
+          email: userData.email,
+          loginMethod: 'google'
+        };
+
+        // Save profile and show main interface
+        await this.saveUserProfile();
+        this.showMainInterface();
+        
+        // Show success message
+        this.showNotification(`Welcome, ${userData.name}!`, 'success');
+      } else {
+        throw new Error('Invalid user data from Google');
+      }
+    } catch (error) {
+      console.error('Google Sign-In error:', error);
+      this.showNotification('Google Sign-In failed. Please try again.', 'error');
+      this.hideLoadingState();
+    }
+  }
+
+  parseJwt(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('Error parsing JWT:', error);
+      return null;
+    }
+  }
+
+  // ==================== LOADING STATES ====================
+  showLoadingState(message) {
+    // Create or show loading overlay
+    let loadingOverlay = document.getElementById('loadingOverlay');
+    if (!loadingOverlay) {
+      loadingOverlay = document.createElement('div');
+      loadingOverlay.id = 'loadingOverlay';
+      loadingOverlay.className = 'fixed inset-0 dark-bg bg-opacity-75 flex items-center justify-center z-50';
+      loadingOverlay.innerHTML = `
+        <div class="card p-6 flex items-center space-x-4">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span class="light-text">${message}</span>
+        </div>
+      `;
+      document.body.appendChild(loadingOverlay);
+    }
+  }
+
+  hideLoadingState() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      loadingOverlay.remove();
+    }
+  }
+
+  showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg z-50 transition-all duration-300 ${
+      type === 'success' ? 'primary-bg' : 
+      type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+    }`;
+    notification.innerHTML = `
+      <div class="flex items-center space-x-2">
+        <i class="fas ${
+          type === 'success' ? 'fa-check' : 
+          type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'
+        }"></i>
+        <span class="light-text">${message}</span>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  }
+
+  // ==================== INITIALIZATION ====================
+  initializeElements() {
+    // Authentication elements
+    this.loginScreen = document.getElementById('loginScreen');
+    this.loginForm = document.getElementById('loginForm');
+    this.usernameInput = document.getElementById('usernameInput');
+    this.guestLink = document.getElementById('guestLink');
+    this.chatMain = document.getElementById('chatMain');
+    
+    // User profile elements
+    this.userAvatar = document.getElementById('userAvatar');
+    this.userName = document.getElementById('userName');
+    this.userEmail = document.getElementById('userEmail');
+    this.logoutBtn = document.getElementById('logoutBtn');
+    this.settingsBtn = document.getElementById('settingsBtn');
+
+    // Chat interface elements
+    this.sidebar = document.getElementById('sidebar');
+    this.chatHistoryDiv = document.getElementById('chatHistory');
+    this.welcomeScreen = document.getElementById('welcomeScreen');
+    this.messagesDiv = document.getElementById('messages');
+    this.userInput = document.getElementById('userInput');
+    this.sendBtn = document.getElementById('sendBtn');
+    this.newChatBtn = document.getElementById('newChatBtn');
+    
+    // Status and info elements
+    this.apiStatus = document.getElementById('apiStatus');
+    this.responseTime = document.getElementById('responseTime');
+    this.charCount = document.getElementById('charCount');
+    this.messageCount = document.getElementById('messageCount');
+    this.currentChatTitle = document.getElementById('currentChatTitle');
+    this.connectionStatusEl = document.getElementById('connectionStatus');
+    this.modelInfo = document.getElementById('modelInfo');
+    this.greetMessage = document.getElementById('greetMessage');
+    
+    // Streaming controls
+    this.streamingControls = document.getElementById('streamingControls');
+    this.stopBtn = document.getElementById('stopBtn');
+    this.typingStatus = document.getElementById('typingStatus');
+    
+    // Action buttons
+    this.clearChat = document.getElementById('clearChat');
+    this.exportChat = document.getElementById('exportChat');
+    
+    // Mobile elements
+    this.mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    this.closeSidebar = document.getElementById('closeSidebar');
+    this.mobileOverlay = document.getElementById('mobileOverlay');
+
+    // Setup scroll listener
+    setTimeout(() => {
+      this.setupScrollListener();
+    }, 1000);
+  }
+
+  // ==================== MOBILE SIDEBAR MANAGEMENT ====================
+  toggleMobileSidebar() {
+    this.isMobileSidebarOpen = !this.isMobileSidebarOpen;
+    
+    if (this.isMobileSidebarOpen) {
+      this.sidebar.classList.add('mobile-open');
+      this.mobileOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    } else {
+      this.sidebar.classList.remove('mobile-open');
+      this.mobileOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+
+  closeMobileSidebar() {
+    this.isMobileSidebarOpen = false;
+    this.sidebar.classList.remove('mobile-open');
+    this.mobileOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // ==================== SCROLL MANAGEMENT ====================
+  scrollToBottom() {
+    if (this.autoScrollEnabled) {
+      setTimeout(() => {
+        const messagesContainer = document.getElementById('messages');
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+      }, 100);
+    }
+  }
+
+  checkAutoScroll() {
+    const messagesContainer = document.getElementById('messages');
+    if (messagesContainer) {
+      // If user is near the bottom (within 100px), enable auto-scroll
+      const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
+      this.autoScrollEnabled = isNearBottom;
+    }
+  }
+
+  setupScrollListener() {
+    const messagesContainer = document.getElementById('messages');
+    if (messagesContainer) {
+      messagesContainer.addEventListener('scroll', () => {
+        this.checkAutoScroll();
+      });
+    }
+  }
+
+  // ==================== AUTHENTICATION ====================
+  async handleManualLogin(event) {
+    event.preventDefault();
+    const username = this.usernameInput.value.trim();
+    if (!username) return;
+
+    this.userProfile = {
+      name: username,
+      avatar: '',
+      email: '',
+      loginMethod: 'manual'
+    };
+
+    await this.saveUserProfile();
+    this.showMainInterface();
+    this.showNotification(`Welcome, ${username}!`, 'success');
+  }
+
+  handleGuestLogin() {
+    this.userProfile = {
+      name: 'Guest',
+      avatar: '',
+      email: '',
+      loginMethod: 'guest'
+    };
+    this.saveUserProfile();
+    this.showMainInterface();
+    this.showNotification('Welcome, Guest!', 'info');
+  }
+
+  // ==================== USER PROFILE MANAGEMENT ====================
+  async saveUserProfile() {
+    try {
+      localStorage.setItem('deepseekUserProfile', JSON.stringify(this.userProfile));
+      this.currentUser = this.userProfile.name;
+    } catch (error) {
+      console.error('Error saving user profile:', error);
+    }
+  }
+
+  loadUserProfile() {
+    try {
+      const profile = localStorage.getItem('deepseekUserProfile');
+      if (profile) {
+        this.userProfile = JSON.parse(profile);
+        this.currentUser = this.userProfile.name;
+        return true;
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+    return false;
+  }
+
+  updateUserInterface() {
+    // Update user profile in sidebar
+    this.userName.textContent = this.userProfile.name;
+    this.userEmail.textContent = this.userProfile.email || '';
+    
+    if (this.userProfile.avatar) {
+      this.userAvatar.src = this.userProfile.avatar;
+    } else {
+      // Generate initial-based avatar
+      const initials = this.userProfile.name.split(' ').map(n => n[0]).join('').toUpperCase();
+      this.userAvatar.src = `data:image/svg+xml;base64,${btoa(`
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="20" fill="#1F2937"/>
+          <text x="20" y="26" text-anchor="middle" fill="#9CA3AF" font-family="Arial" font-size="14" font-weight="bold">${initials}</text>
+        </svg>
+      `)}`;
+    }
+
+    // Update greeting
+    this.greetMessage.textContent = `Welcome back, ${this.userProfile.name}!`;
+  }
+
+  // ==================== CHAT MANAGEMENT ====================
+  initializeChatSession() {
+    this.chatHistory = this.loadChatHistory();
+    
+    if (Object.keys(this.chatHistory).length > 0) {
+      const chatIds = Object.keys(this.chatHistory);
+      this.currentChatId = chatIds[chatIds.length - 1];
+    } else {
+      this.createNewChat();
+    }
+    
+    this.renderChatSidebar();
+    this.renderChatMessages();
+    this.updateMessageCount();
+  }
+
+  createNewChat() {
+    this.currentChatId = 'chat_' + Date.now();
+    this.chatHistory[this.currentChatId] = {
+      id: this.currentChatId,
+      title: 'New Chat',
+      messages: [],
+      timestamp: Date.now(),
+      model: 'gemini-2.5-flash'
+    };
+    this.saveChatHistory();
+    this.currentChatTitle.textContent = 'New Chat';
+    return this.currentChatId;
+  }
+
+  // ==================== REAL-TIME MESSAGING ====================
+  async handleSendMessage() {
+    const message = this.userInput.value.trim();
+    if (!message || this.isProcessing) return;
+    
+    this.isProcessing = true;
+    this.userInput.value = '';
+    this.updateCharCount();
+    this.disableInput();
+    
+    // Close mobile sidebar if open
+    if (this.isMobileSidebarOpen) {
+      this.closeMobileSidebar();
+    }
+    
+    // Add user message with user's avatar
+    const userMessageId = this.addMessageToChat(message, 'user');
+    
+    // Show streaming controls
+    this.showStreamingControls();
+    const typingIndicator = this.showTypingIndicator();
+    const startTime = Date.now();
+    
+    try {
+      // Use streaming for real-time experience
+      await this.streamBotResponse(message, typingIndicator, startTime);
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        this.handleApiError(error, typingIndicator);
+      }
+    } finally {
+      this.isProcessing = false;
+      this.enableInput();
+      this.hideStreamingControls();
+    }
+  }
+
+  async streamBotResponse(userMessage, typingIndicator, startTime) {
+    this.isStreaming = true;
+    const messageId = this.addMessageToChat('', 'bot');
+    const messageElement = document.getElementById(`message-${messageId}`);
+    
+    if (messageElement) {
+      messageElement.classList.add('message-streaming');
+      
+      // Create an AbortController for stopping the stream
+      this.currentStreamController = new AbortController();
+      
+      try {
+        const botReply = await this.getBotReplyStreaming(
+          userMessage, 
+          (chunk) => {
+            this.updateStreamingMessage(messageId, chunk);
+          },
+          this.currentStreamController.signal
+        );
+        
+        this.finalizeStreamingMessage(messageId, botReply);
+        this.updateResponseTime(Date.now() - startTime);
+        
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          this.updateStreamingMessage(messageId, 'Sorry, I encountered an error. Please try again.');
+          throw error;
+        } else {
+          // Stream was stopped by user
+          this.updateStreamingMessage(messageId, this.getCurrentMessageText(messageId) + ' (Stopped)');
+        }
+      } finally {
+        messageElement.classList.remove('message-streaming');
+        this.isStreaming = false;
+        this.currentStreamController = null;
+      }
+    }
+    
+    typingIndicator.remove();
+  }
+
+  async getBotReplyStreaming(userMessage, onChunk, signal) {
+    // Simulate streaming for real-time experience with abort capability
+    const response = await this.getBotReply(userMessage);
+    const words = response.split(' ');
+    let accumulatedText = '';
+    
+    for (let i = 0; i < words.length; i++) {
+      // Check if the stream was aborted
+      if (signal.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+      }
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 40));
+      accumulatedText += (i === 0 ? '' : ' ') + words[i];
+      onChunk(accumulatedText);
+      
+      // Update typing status with realistic timing
+      if (i % 5 === 0) {
+        this.updateTypingProgress(i / words.length);
+      }
+    }
+    
+    return response;
+  }
+
+  // ==================== STOP FUNCTIONALITY ====================
+  handleStopGeneration() {
+    if (this.currentStreamController) {
+      this.currentStreamController.abort();
+      this.showNotification('Generation stopped', 'info');
+    }
+    this.hideStreamingControls();
+    this.enableInput();
+    this.isProcessing = false;
+    this.isStreaming = false;
+  }
+
+  showStreamingControls() {
+    this.streamingControls.classList.remove('hidden');
+    this.typingStatus.classList.remove('hidden');
+  }
+
+  hideStreamingControls() {
+    this.streamingControls.classList.add('hidden');
+    this.typingStatus.classList.add('hidden');
+  }
+
+  // ==================== MESSAGE RENDERING ====================
+  addMessageToChat(text, sender) {
+    if (!this.currentChatId || !this.chatHistory[this.currentChatId]) {
+      this.createNewChat();
+    }
+    
+    const chat = this.chatHistory[this.currentChatId];
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const message = {
+      id: messageId,
+      sender,
+      text,
+      timestamp: Date.now(),
+      userAvatar: sender === 'user' ? this.userProfile.avatar : null
+    };
+    
+    chat.messages.push(message);
+    
+    // Update chat title with first message
+    if (chat.messages.length === 1) {
+      chat.title = text.length > 30 ? text.substring(0, 30) + '...' : text;
+      this.currentChatTitle.textContent = chat.title;
+      this.renderChatSidebar();
+    }
+    
+    this.saveChatHistory();
+    this.addMessageToUI(text, sender, true, messageId);
+    this.updateMessageCount();
+    
+    return messageId;
+  }
+
+  addMessageToUI(text, sender, scroll = true, messageId = null) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} fade-in`;
+    messageDiv.id = messageId ? `message-${messageId}` : undefined;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai';
+    
+    if (sender === 'bot') {
+      contentDiv.innerHTML = this.formatBotResponse(text);
+    } else {
+      contentDiv.textContent = text;
+    }
+    
+    messageDiv.appendChild(contentDiv);
+    this.messagesDiv.appendChild(messageDiv);
+    
+    if (scroll) {
+      this.scrollToBottom();
+    }
+    
+    this.hideWelcomeScreen();
+  }
+
+  updateStreamingMessage(messageId, text) {
+    const messageElement = document.getElementById(`message-${messageId}`);
+    if (messageElement) {
+      const contentDiv = messageElement.querySelector('div');
+      if (contentDiv) {
+        contentDiv.innerHTML = this.formatBotResponse(text);
+        // Only auto-scroll if user hasn't manually scrolled up
+        this.scrollToBottom();
+      }
+    }
+  }
+
+  // ==================== UI UPDATES & STATUS ====================
+  updateTypingProgress(progress) {
+    const dots = Math.floor(progress * 3) + 1;
+    this.typingStatus.innerHTML = `
+      <i class="fas fa-circle text-xs mr-1"></i>
+      AI is typing${'.'.repeat(dots)}
+    `;
+  }
+
+  updateConnectionStatus(status) {
+    this.connectionStatus = status;
+    const statusMap = {
+      online: { text: 'Connected', color: 'primary-text', icon: 'fa-circle' },
+      offline: { text: 'Offline', color: 'text-red-400', icon: 'fa-circle' },
+      connecting: { text: 'Connecting', color: 'text-yellow-400', icon: 'fa-sync fa-spin' }
+    };
+    
+    const currentStatus = statusMap[status] || statusMap.offline;
+    this.connectionStatusEl.className = currentStatus.color;
+    this.connectionStatusEl.innerHTML = `
+      <i class="fas ${currentStatus.icon} text-xs mr-1"></i>
+      <span class="hidden sm:inline">${currentStatus.text}</span>
+    `;
+  }
+
+  updateApiStatus(status) {
+    const statusMap = {
+      ready: { text: 'Ready', color: 'primary-text' },
+      requesting: { text: 'Requesting...', color: 'text-yellow-400' },
+      success: { text: 'Success', color: 'primary-text' },
+      error: { text: 'Error', color: 'text-red-400' }
+    };
+    
+    const currentStatus = statusMap[status] || statusMap.ready;
+    this.apiStatus.textContent = currentStatus.text;
+    this.apiStatus.className = currentStatus.color;
+  }
+
+  // ==================== EVENT HANDLERS ====================
+  setupEventListeners() {
+    // Authentication
+    this.loginForm.addEventListener('submit', (e) => this.handleManualLogin(e));
+    this.guestLink.addEventListener('click', () => this.handleGuestLogin());
+    this.logoutBtn.addEventListener('click', () => this.handleLogout());
+
+    // Chat interactions
+    this.sendBtn.addEventListener('click', () => this.handleSendMessage());
+    this.userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.handleSendMessage();
+      }
+    });
+    this.userInput.addEventListener('input', () => {
+      this.updateCharCount();
+      this.autoResizeTextarea();
+    });
+
+    // Stop button
+    this.stopBtn.addEventListener('click', () => this.handleStopGeneration());
+
+    // Chat management
+    this.newChatBtn.addEventListener('click', () => {
+      this.createNewChat();
+      this.renderChatSidebar();
+      this.renderChatMessages();
+      this.userInput.focus();
+    });
+
+    // Mobile sidebar
+    this.mobileMenuBtn.addEventListener('click', () => this.toggleMobileSidebar());
+    this.closeSidebar.addEventListener('click', () => this.closeMobileSidebar());
+    this.mobileOverlay.addEventListener('click', () => this.closeMobileSidebar());
+
+    // Quick prompts
+    document.querySelectorAll('[data-prompt]').forEach(element => {
+      element.addEventListener('click', () => {
+        this.userInput.value = element.getAttribute('data-prompt');
+        this.updateCharCount();
+        this.userInput.focus();
+        this.closeMobileSidebar();
+      });
+    });
+
+    // Additional actions
+    this.clearChat.addEventListener('click', () => this.clearCurrentChat());
+    this.exportChat.addEventListener('click', () => this.exportChatHistory());
+    
+    // Window resize handler
+    window.addEventListener('resize', () => {
+      // Close mobile sidebar on resize to larger screens
+      if (window.innerWidth >= 1024 && this.isMobileSidebarOpen) {
+        this.closeMobileSidebar();
+      }
+    });
+  }
+
+  // ==================== UTILITIES ====================
+  formatBotResponse(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code class="bg-gray-700 px-1 rounded">$1</code>')
+      .replace(/\n/g, '<br>');
+  }
+
+  showTypingIndicator() {
+    const div = document.createElement('div');
+    div.className = 'flex justify-start fade-in';
+    div.innerHTML = `
+      <div class="chat-bubble-ai">
+        <div class="flex items-center space-x-2">
+          <div class="typing-dots">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+          <span class="text-gray-400 text-sm">DeepSeek AI is thinking...</span>
+        </div>
+      </div>
+    `;
+    
+    this.messagesDiv.appendChild(div);
+    this.scrollToBottom();
+    
+    return {
+      remove: () => {
+        if (div.parentNode) {
+          div.parentNode.removeChild(div);
+        }
+      }
+    };
+  }
+
+  getCurrentMessageText(messageId) {
+    const messageElement = document.getElementById(`message-${messageId}`);
+    if (messageElement) {
+      const contentDiv = messageElement.querySelector('div');
+      if (contentDiv) {
+        return contentDiv.textContent || contentDiv.innerText;
+      }
+    }
+    return '';
+  }
+
+  // ==================== STORAGE MANAGEMENT ====================
+  loadChatHistory() {
+    try {
+      const history = localStorage.getItem('deepseekChatHistory');
+      return history ? JSON.parse(history) : {};
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+      return {};
+    }
+  }
+
+  saveChatHistory() {
+    try {
+      localStorage.setItem('deepseekChatHistory', JSON.stringify(this.chatHistory));
+    } catch (error) {
+      console.error('Error saving chat history:', error);
+    }
+  }
+
+  // ==================== SCREEN MANAGEMENT ====================
+  showLoginScreen() {
+    this.loginScreen.classList.remove('hidden');
+    this.chatMain.classList.add('hidden');
+    setTimeout(() => this.usernameInput.focus(), 100);
+  }
+
+  showMainInterface() {
+    this.loginScreen.classList.add('hidden');
+    this.chatMain.classList.remove('hidden');
+    this.updateUserInterface();
+    this.initializeChatSession();
+    this.updateConnectionStatus('online');
+    this.userInput.focus();
+    this.hideLoadingState();
+  }
+
+  // ==================== INITIALIZATION ====================
+  init() {
+    if (this.loadUserProfile()) {
+      this.showMainInterface();
+    } else {
+      this.showLoginScreen();
+    }
+    
+    // Simulate connection monitoring
+    setInterval(() => {
+      this.updateConnectionStatus('online');
+    }, 30000);
+  }
+
+  // ==================== ADDITIONAL METHODS ====================
+  handleLogout() {
+    // Revoke Google authentication if applicable
+    if (this.userProfile.loginMethod === 'google') {
+      window.google.accounts.id.revoke(this.userProfile.email, (done) => {
+        console.log('Google access revoked');
+      });
+    }
+
+    // Clear local storage
+    localStorage.removeItem('deepseekUserProfile');
+    localStorage.removeItem('deepseekChatHistory');
+    
+    // Reset state
+    this.currentUser = null;
+    this.userProfile = {};
+    this.currentChatId = null;
+    this.chatHistory = {};
+    
+    // Show login screen
+    this.showLoginScreen();
+    this.showNotification('You have been logged out', 'info');
+  }
+
+  clearCurrentChat() {
+    if (this.currentChatId && this.chatHistory[this.currentChatId]) {
+      this.chatHistory[this.currentChatId].messages = [];
+      this.saveChatHistory();
+      this.renderChatMessages();
+      this.showNotification('Chat cleared', 'success');
+    }
+  }
+
+  exportChatHistory() {
+    if (this.currentChatId && this.chatHistory[this.currentChatId]) {
+      const chat = this.chatHistory[this.currentChatId];
+      const content = chat.messages.map(msg => 
+        `${msg.sender === 'user' ? 'You' : 'AI'}: ${msg.text}`
+      ).join('\n\n');
+      
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chat-${this.currentChatId}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      this.showNotification('Chat exported successfully', 'success');
+    }
+  }
+}
+
+// Implement remaining methods...
+ProfessionalChatBot.prototype.renderChatSidebar = function() {
+  if (!this.chatHistoryDiv) return;
+  
+  this.chatHistoryDiv.innerHTML = '';
+  const chats = Object.values(this.chatHistory)
+    .sort((a, b) => b.timestamp - a.timestamp);
+  
+  chats.forEach(chat => {
+    const div = document.createElement('div');
+    div.className = `sidebar-item ${chat.id === this.currentChatId ? 'active' : ''}`;
+    
+    div.innerHTML = `
+      <div class="font-medium text-sm truncate light-text">${chat.title}</div>
+      <div class="text-xs text-gray-400 mt-1">
+        ${new Date(chat.timestamp).toLocaleTimeString()} • ${chat.messages.length} messages
+      </div>
+    `;
+    
+    div.addEventListener('click', () => {
+      this.switchToChat(chat.id);
+      this.closeMobileSidebar();
+    });
+    this.chatHistoryDiv.appendChild(div);
+  });
+};
+
+ProfessionalChatBot.prototype.renderChatMessages = function() {
+  if (!this.messagesDiv) return;
+  
+  this.messagesDiv.innerHTML = '';
+  
+  if (!this.currentChatId || !this.chatHistory[this.currentChatId]) {
+    this.showWelcomeScreen();
+    return;
+  }
+  
+  const chat = this.chatHistory[this.currentChatId];
+  if (!chat.messages.length) {
+    this.showWelcomeScreen();
+    return;
+  }
+  
+  this.hideWelcomeScreen();
+  this.currentChatTitle.textContent = chat.title;
+  
+  chat.messages.forEach((message) => {
+    this.addMessageToUI(message.text, message.sender, false, message.id);
+  });
+  
+  this.scrollToBottom();
+};
+
+ProfessionalChatBot.prototype.switchToChat = function(chatId) {
+  this.currentChatId = chatId;
+  this.renderChatSidebar();
+  this.renderChatMessages();
+  this.updateMessageCount();
+};
+
+ProfessionalChatBot.prototype.showWelcomeScreen = function() {
+  this.welcomeScreen.classList.remove('hidden');
+  this.messagesDiv.classList.add('hidden');
+};
+
+ProfessionalChatBot.prototype.hideWelcomeScreen = function() {
+  this.welcomeScreen.classList.add('hidden');
+  this.messagesDiv.classList.remove('hidden');
+};
+
+ProfessionalChatBot.prototype.updateCharCount = function() {
+  const count = this.userInput.value.length;
+  this.charCount.textContent = `${count}/4000`;
+};
+
+ProfessionalChatBot.prototype.updateMessageCount = function() {
+  if (this.currentChatId && this.chatHistory[this.currentChatId]) {
+    const count = this.chatHistory[this.currentChatId].messages.length;
+    this.messageCount.textContent = `${count} message${count !== 1 ? 's' : ''}`;
+  }
+};
+
+ProfessionalChatBot.prototype.updateResponseTime = function(time) {
+  this.responseTime.textContent = `${time}ms`;
+};
+
+ProfessionalChatBot.prototype.autoResizeTextarea = function() {
+  this.userInput.style.height = 'auto';
+  this.userInput.style.height = Math.min(this.userInput.scrollHeight, 120) + 'px';
+};
+
+ProfessionalChatBot.prototype.disableInput = function() {
+  this.userInput.disabled = true;
+  this.sendBtn.disabled = true;
+};
+
+ProfessionalChatBot.prototype.enableInput = function() {
+  this.userInput.disabled = false;
+  this.sendBtn.disabled = false;
+  this.userInput.focus();
+};
+
+ProfessionalChatBot.prototype.finalizeStreamingMessage = function(messageId, finalText) {
+  const messageElement = document.getElementById(`message-${messageId}`);
+  if (messageElement) {
+    messageElement.classList.remove('message-streaming');
+    
+    // Update the chat history with the final text
+    if (this.currentChatId && this.chatHistory[this.currentChatId]) {
+      const chat = this.chatHistory[this.currentChatId];
+      const message = chat.messages.find(msg => msg.id === messageId);
+      if (message) {
+        message.text = finalText;
+        this.saveChatHistory();
+      }
+    }
+  }
+};
+
+ProfessionalChatBot.prototype.handleApiError = function(error, typingIndicator) {
+  console.error('API Error:', error);
+  typingIndicator.remove();
+  this.hideStreamingControls();
+  this.addMessageToChat(
+    'Sorry, I encountered an error while processing your request. Please try again in a moment.',
+    'bot'
+  );
+  this.updateConnectionStatus('offline');
+  setTimeout(() => this.updateConnectionStatus('online'), 5000);
+};
+
+ProfessionalChatBot.prototype.getBotReply = async function(userMessage) {
+  const API_KEY = "AIzaSyAA8CqwbN269gDFQb56MgVZJHwZHJCyAUY";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+  
+  const body = {
+    contents: [{ parts: [{ text: userMessage }] }]
+  };
+  
+  this.updateApiStatus('requesting');
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    this.updateApiStatus('success');
+    
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response. Please try again.";
+    
+  } catch (error) {
+    this.updateApiStatus('error');
+    throw error;
+  }
+};
+
+// Initialize the professional chatbot
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait for Google Identity Services to load
+  if (typeof google !== 'undefined') {
+    window.chatBot = new ProfessionalChatBot();
+  } else {
+    // Fallback if Google doesn't load immediately
+    setTimeout(() => {
+      window.chatBot = new ProfessionalChatBot();
+    }, 1000);
+  }
+});
+</script>
+</body>
+</html>
